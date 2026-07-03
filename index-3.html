@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Balamanikandan C — Portfolio</title>
+<meta name="description" content="Balamanikandan C — Computer Science & Technology student. A scroll-driven 3D journey through education, skills, projects and achievements.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0c10; --text:#e9e7e1; --text-dim:#8b92a0; --text-faint:#565d6b;
+    --copper:#d68c45; --cyan:#5eead4; --line:rgba(233,231,225,0.10); --line-strong:rgba(233,231,225,0.18);
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; }
+  ::selection{ background:var(--copper); color:#0a0c10; }
+  a{ color:inherit; text-decoration:none; }
+  .mono{ font-family:'JetBrains Mono',monospace; }
+  h1,h2,h3{ font-family:'Space Grotesk',sans-serif; font-weight:600; letter-spacing:-0.02em; }
+  a:focus-visible, button:focus-visible{ outline:1px solid var(--copper); outline-offset:4px; }
+
+  /* ---------- top nav ---------- */
+  nav{
+    position:fixed; top:0; left:0; right:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:20px 28px;
+    background:linear-gradient(180deg, rgba(10,12,16,0.85), rgba(10,12,16,0));
+    pointer-events:none;
+  }
+  nav > *{ pointer-events:auto; }
+  .nav-brand{ font-family:'JetBrains Mono',monospace; font-size:13px; }
+  .nav-brand span{ color:var(--copper); }
+  .nav-jump{ display:flex; gap:22px; list-style:none; }
+  .nav-jump button{
+    background:none; border:none; cursor:pointer; color:var(--text-dim);
+    font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:.05em;
+    transition:color .25s ease;
+  }
+  .nav-jump button:hover, .nav-jump button.active{ color:var(--copper); }
+  .view-toggle{
+    font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim);
+    border:1px solid var(--line-strong); padding:8px 14px; background:none; cursor:pointer;
+    transition:all .25s ease;
+  }
+  .view-toggle:hover{ color:var(--text); border-color:var(--text-dim); }
+  @media (max-width:900px){ .nav-jump{ display:none; } }
+
+  /* ---------- cinematic view ---------- */
+  #cinematic{ position:relative; }
+  #scene{ position:fixed; inset:0; width:100%; height:100%; z-index:0; opacity:0; transition:opacity 1.4s ease; }
+  #scene.ready{ opacity:1; }
+  .scroll-track{ position:relative; z-index:1; width:100%; }
+
+  .hud{ position:fixed; z-index:20; pointer-events:none; }
+  .hud-progress{
+    position:fixed; top:0; left:0; right:0; height:2px; z-index:30;
+    background:var(--line);
+  }
+  .hud-progress-fill{ height:100%; width:0%; background:var(--copper); box-shadow:0 0 8px var(--copper); transition:width .05s linear; }
+  .hud-frame{
+    position:fixed; bottom:26px; right:28px; z-index:20;
+    font-size:11px; color:var(--text-faint); letter-spacing:.05em;
+  }
+  .hud-frame span{ color:var(--copper); }
+  .hud-act{
+    position:fixed; bottom:26px; left:28px; z-index:20;
+    font-size:11px; color:var(--text-faint); letter-spacing:.08em; text-transform:uppercase;
+  }
+  .hud-scrollcue{
+    position:fixed; bottom:64px; left:50%; transform:translateX(-50%); z-index:20;
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--text-faint);
+    letter-spacing:.1em; text-transform:uppercase; text-align:center;
+    transition:opacity .4s ease;
+  }
+  .hud-scrollcue .arrow{ display:block; margin-top:6px; animation:bob 1.6s ease-in-out infinite; }
+  @keyframes bob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(6px); } }
+
+  /* ---------- panels ---------- */
+  #panels{ position:fixed; inset:0; z-index:10; }
+  .panel{
+    position:absolute; top:50%; max-width:440px;
+    transform:translateY(-50%);
+    opacity:0; pointer-events:none;
+    transition:opacity .1s linear;
+  }
+  .panel.left{ left:8%; }
+  .panel.right{ right:8%; text-align:right; }
+  .panel.right .proj-tags, .panel.right ul{ justify-content:flex-end; }
+  .panel.center{ left:50%; transform:translate(-50%,-50%); text-align:center; max-width:560px; }
+  @media (max-width:760px){
+    .panel.left, .panel.right{ left:6%; right:6%; text-align:left; max-width:none; }
+  }
+
+  .panel .eyebrow{ font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--cyan); letter-spacing:.06em; margin-bottom:14px; display:block; text-transform:uppercase; }
+  .panel h2{ font-size:clamp(1.7rem,4vw,2.6rem); line-height:1.05; margin-bottom:16px; }
+  .panel h2 em{ font-style:normal; color:var(--copper); }
+  .panel p{ color:var(--text-dim); font-size:.98rem; line-height:1.65; margin-bottom:10px; }
+  .panel .tagrow{ display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; }
+  .panel.right .tagrow{ justify-content:flex-end; }
+  .panel .tagrow span{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-faint); border:1px solid var(--line-strong); padding:5px 10px; }
+  .panel .stack{ margin-top:18px; display:flex; flex-direction:column; gap:10px; }
+  .panel.right .stack{ align-items:flex-end; }
+  .panel .stack-item{ font-size:.88rem; color:var(--text-dim); }
+  .panel .stack-item b{ color:var(--text); font-weight:500; }
+  .panel .btn{
+    display:inline-flex; margin-top:22px; pointer-events:auto;
+    font-family:'JetBrains Mono',monospace; font-size:13px; padding:13px 24px;
+    background:var(--copper); color:#0a0c10; border:1px solid var(--copper);
+    transition:all .3s ease;
+  }
+  .panel .btn:hover{ background:transparent; color:var(--copper); }
+  .panel-list{ list-style:none; display:flex; flex-direction:column; gap:14px; margin-top:6px; }
+  .panel-list li{ font-size:.9rem; color:var(--text-dim); }
+  .panel-list b{ color:var(--text); font-weight:500; display:block; margin-bottom:2px; }
+  .contact-links{ list-style:none; display:flex; flex-direction:column; gap:12px; margin-top:22px; }
+  .contact-links a{ pointer-events:auto; font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--text); border-bottom:1px solid var(--line-strong); padding-bottom:8px; display:flex; justify-content:space-between; gap:24px; transition:color .25s ease,border-color .25s ease; }
+  .contact-links a:hover{ color:var(--copper); border-color:var(--copper); }
+  .contact-links .k{ color:var(--text-faint); text-transform:uppercase; font-size:10.5px; }
+
+  /* ---------- plain fallback view ---------- */
+  #plain{ position:relative; z-index:5; padding-top:100px; }
+  #plain .wrap{ max-width:800px; margin:0 auto; padding:0 28px 120px; }
+  #plain section{ padding:64px 0; border-top:1px solid var(--line); }
+  #plain section:first-of-type{ border-top:none; }
+  #plain h2{ font-size:1.9rem; margin-bottom:24px; }
+  #plain h3{ font-size:1.1rem; margin:18px 0 6px; color:var(--copper); }
+  #plain p, #plain li{ color:var(--text-dim); font-size:.96rem; line-height:1.7; margin-bottom:10px; }
+  #plain .eyebrow{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--cyan); text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px; display:block; }
+  #plain ul{ padding-left:18px; }
+  #plain .contact-links{ position:static; }
+  #plain footer{ padding:32px 0 0; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-faint); border-top:1px solid var(--line); margin-top:20px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">balamanikandan<span>.</span>c</div>
+  <ul class="nav-jump mono" id="navJump">
+    <li><button data-p="0.0">Intro</button></li>
+    <li><button data-p="0.09">About</button></li>
+    <li><button data-p="0.24">Education</button></li>
+    <li><button data-p="0.40">Skills</button></li>
+    <li><button data-p="0.585">Projects</button></li>
+    <li><button data-p="0.76">Awards</button></li>
+    <li><button data-p="0.90">Contact</button></li>
+  </ul>
+  <button class="view-toggle" id="viewToggle">Simple view</button>
+</nav>
+
+<div id="cinematic">
+  <canvas id="scene"></canvas>
+
+  <div class="hud">
+    <div class="hud-progress"><div class="hud-progress-fill" id="hudFill"></div></div>
+    <div class="hud-act mono" id="hudAct">00 · intro</div>
+    <div class="hud-frame mono">frame <span id="hudFrame">0000</span> / 1200</div>
+    <div class="hud-scrollcue" id="hudCue">scroll to play<span class="arrow">↓</span></div>
+  </div>
+
+  <div id="panels">
+    <div class="panel center" id="p-hero">
+      <span class="eyebrow">Portfolio — one scroll, one frame</span>
+      <h2>Balamanikandan <em>C.</em></h2>
+      <p>Computer Science & Technology student. Electronics engineer by training, software & AI builder by direction. Scroll to begin.</p>
+    </div>
+
+    <div class="panel left" id="p-about">
+      <span class="eyebrow">01 · About</span>
+      <h2>Hardware roots, <em>software direction.</em></h2>
+      <p>From Srivilliputhur, Tamil Nadu. Started in Electronics & Communication Engineering, now completing a B.E. in Computer Science & Technology — building AI platforms, solving algorithms, and staying close to the hardware that started it all.</p>
+      <p>Event coordinator, state-level competition winner, and a builder who believes the best engineers speak both hardware and software.</p>
+    </div>
+
+    <div class="panel right" id="p-edu-1">
+      <span class="eyebrow">02 · Education — 01/03</span>
+      <h2>B.E. Computer Science <em>& Technology</em></h2>
+      <p>Currently pursuing — 2023 to present. Full-time engineering degree, Tamil Nadu.</p>
+    </div>
+    <div class="panel right" id="p-edu-2">
+      <span class="eyebrow">02 · Education — 02/03</span>
+      <h2>Diploma, <em>ECE</em></h2>
+      <p>P.A.C. Ramasamy Raja Polytechnic College, Rajapalayam. Foundation in electronics, circuits and communication systems.</p>
+    </div>
+    <div class="panel right" id="p-edu-3">
+      <span class="eyebrow">02 · Education — 03/03</span>
+      <h2>Secondary <em>Schooling</em></h2>
+      <p>Srivi Lion School, Srivilliputhur — where it all started.</p>
+    </div>
+
+    <div class="panel left" id="p-skills">
+      <span class="eyebrow">03 · Skills</span>
+      <h2>Four <em>disciplines.</em></h2>
+      <ul class="panel-list">
+        <li><b>Programming</b>C / C++ · Python · HTML / CSS · problem solving</li>
+        <li><b>Electronics & Automation</b>PLC programming · ladder logic · circuit design · sensor integration</li>
+        <li><b>Data & AI</b>Databricks · AI platform development · data engineering</li>
+        <li><b>Soft skills</b>Event coordination · technical presentation · leadership</li>
+      </ul>
+    </div>
+
+    <div class="panel right" id="p-proj-1">
+      <span class="eyebrow">04 · Project — 01/02</span>
+      <h2>SkillCraft <em>Engine</em></h2>
+      <p>An AI-powered platform generating personalised learning roadmaps — bridging curiosity and job-ready skill.</p>
+      <div class="tagrow"><span>AI Platform</span><span>EdTech</span><span>Personalisation</span></div>
+    </div>
+    <div class="panel left" id="p-proj-2">
+      <span class="eyebrow">04 · Project — 02/02</span>
+      <h2>PLC-Based <em>Chemical Mixer</em></h2>
+      <p>A PLC system automating motors, valves and sensors for industrial chemical mixing — ladder logic, real-time monitoring, safety interlocks.</p>
+      <div class="tagrow"><span>PLC</span><span>Ladder Logic</span><span>Automation</span></div>
+    </div>
+
+    <div class="panel center" id="p-achievements">
+      <span class="eyebrow">05 · Achievements</span>
+      <h2>Recognition <em>along the way.</em></h2>
+      <ul class="panel-list" style="text-align:left; display:inline-block;">
+        <li><b>State-Level Winner</b> — Circuit Debugging</li>
+        <li><b>Winner</b> — Technical Paper Presentation</li>
+        <li><b>Event Coordinator</b> — Texperia 26</li>
+        <li><b>Certified</b> — Databricks · Tata Group Forage Program</li>
+      </ul>
+    </div>
+
+    <div class="panel center" id="p-contact">
+      <span class="eyebrow">06 · Contact</span>
+      <h2>Let's <em>build something.</em></h2>
+      <p>Open to internships, collaborations, and project discussions.</p>
+      <ul class="contact-links">
+        <li><a href="mailto:214004balamanikandan.c@gmail.com"><span class="k">Email</span>214004balamanikandan.c@gmail.com</a></li>
+        <li><a href="tel:+917695967305"><span class="k">Phone</span>+91 76959 67305</a></li>
+        <li><a href="https://github.com/214004balamanikandanc-del" target="_blank" rel="noopener"><span class="k">GitHub</span>214004balamanikandanc-del</a></li>
+        <li><a href="https://www.linkedin.com/in/balamanikandan-c" target="_blank" rel="noopener"><span class="k">LinkedIn</span>balamanikandan-c</a></li>
+        <li><a href="https://leetcode.com/u/Balamanikandan2006/" target="_blank" rel="noopener"><span class="k">LeetCode</span>Balamanikandan2006</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="scroll-track" id="scrollTrack" style="height:900vh;"></div>
+</div>
+
+<div id="plain" hidden>
+  <div class="wrap">
+    <section>
+      <span class="eyebrow">Portfolio</span>
+      <h2>Balamanikandan C.</h2>
+      <p>Computer Science & Technology student with a foundation in Electronics & Communication Engineering — building at the intersection of industrial automation, AI platforms, and real-world problem solving. Based in Srivilliputhur, Tamil Nadu.</p>
+    </section>
+    <section>
+      <h2>About</h2>
+      <p>I'm Balamanikandan C, a CST engineering student. My journey began in Electronics & Communication Engineering, where I developed a deep appreciation for hardware, automation, and real-time systems. Today I'm expanding into software — building AI-powered platforms, solving algorithmic problems, and exploring data engineering.</p>
+      <p>Beyond the screen, I'm an event coordinator and active participant in the tech community — coordinating events at Texperia 26, attending entrepreneur meetups, and winning competitions at the state level.</p>
+    </section>
+    <section>
+      <h2>Education</h2>
+      <h3>B.E. Computer Science & Technology — 2023–present</h3><p>Currently pursuing, Tamil Nadu.</p>
+      <h3>Diploma, Electronics & Communication Engineering</h3><p>P.A.C. Ramasamy Raja Polytechnic College, Rajapalayam.</p>
+      <h3>Secondary Schooling</h3><p>Srivi Lion School, Srivilliputhur.</p>
+    </section>
+    <section>
+      <h2>Skills</h2>
+      <h3>Programming & Development</h3><p>C / C++, Python, HTML/CSS, problem solving</p>
+      <h3>Electronics & Automation</h3><p>PLC programming, ladder logic, circuit design, sensor integration, industrial automation</p>
+      <h3>Data & AI</h3><p>Databricks, AI platform development, data engineering</p>
+      <h3>Soft Skills</h3><p>Event coordination, technical presentation, leadership, team collaboration</p>
+    </section>
+    <section>
+      <h2>Projects</h2>
+      <h3>SkillCraft Engine</h3>
+      <p>An AI-powered educational platform that generates personalised learning roadmaps for students across different domains — bridging curiosity and job-ready skills.</p>
+      <h3>PLC-Based Chemical Mixer</h3>
+      <p>A PLC system controlling motors, valves and sensors for chemical mixing, programmed with ladder logic to manage mixing duration, liquid level monitoring, and safety interlocks.</p>
+    </section>
+    <section>
+      <h2>Achievements</h2>
+      <ul>
+        <li>Event Coordinator, Texperia 26 — Paper Presentation & Stranger Things events</li>
+        <li>State-Level Winner — Circuit Debugging</li>
+        <li>Winner — Technical Paper Presentation</li>
+        <li>Databricks Certification</li>
+        <li>Tata Group Forage Program</li>
+        <li>Entrepreneur Meetup, Nagercoil</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Contact</h2>
+      <ul class="contact-links">
+        <li><a href="mailto:214004balamanikandan.c@gmail.com"><span class="k">Email</span>214004balamanikandan.c@gmail.com</a></li>
+        <li><a href="tel:+917695967305"><span class="k">Phone</span>+91 76959 67305</a></li>
+        <li><a href="https://github.com/214004balamanikandanc-del" target="_blank" rel="noopener"><span class="k">GitHub</span>214004balamanikandanc-del</a></li>
+        <li><a href="https://www.linkedin.com/in/balamanikandan-c" target="_blank" rel="noopener"><span class="k">LinkedIn</span>balamanikandan-c</a></li>
+        <li><a href="https://leetcode.com/u/Balamanikandan2006/" target="_blank" rel="noopener"><span class="k">LeetCode</span>Balamanikandan2006</a></li>
+      </ul>
+    </section>
+    <footer>© 2026 Balamanikandan C · Srivilliputhur, TN</footer>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* ============ view toggle ============ */
+  const cinematic = document.getElementById('cinematic');
+  const plain = document.getElementById('plain');
+  const viewToggle = document.getElementById('viewToggle');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let cinematicOn = !reducedMotion;
+
+  function applyView(){
+    cinematic.hidden = !cinematicOn;
+    plain.hidden = cinematicOn;
+    document.body.style.overflow = '';
+    viewToggle.textContent = cinematicOn ? 'Simple view' : 'Cinematic view';
+  }
+  viewToggle.addEventListener('click', () => { cinematicOn = !cinematicOn; applyView(); });
+  applyView();
+
+  /* ============ scroll progress ============ */
+  const track = document.getElementById('scrollTrack');
+  let totalScrollable = 1;
+  function measure(){ totalScrollable = Math.max(track.offsetHeight - window.innerHeight, 1); }
+  measure();
+  window.addEventListener('resize', measure);
+
+  let progress = 0;
+  function clamp(v,a,b){ return Math.min(b, Math.max(a,v)); }
+  window.addEventListener('scroll', () => {
+    progress = clamp(window.scrollY / totalScrollable, 0, 1);
+  }, { passive:true });
+
+  /* nav jump buttons */
+  document.getElementById('navJump').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-p]');
+    if(!btn) return;
+    if(!cinematicOn){ cinematicOn = true; applyView(); }
+    const p = parseFloat(btn.dataset.p);
+    window.scrollTo({ top: p * totalScrollable, behavior:'smooth' });
+  });
+
+  /* ============ panels & HUD ============ */
+  const panelConfigs = [
+    { id:'p-hero',         range:[0.000, 0.085] },
+    { id:'p-about',        range:[0.095, 0.225] },
+    { id:'p-edu-1',        range:[0.240, 0.295] },
+    { id:'p-edu-2',        range:[0.300, 0.350] },
+    { id:'p-edu-3',        range:[0.355, 0.395] },
+    { id:'p-skills',       range:[0.405, 0.575] },
+    { id:'p-proj-1',       range:[0.585, 0.665] },
+    { id:'p-proj-2',       range:[0.670, 0.755] },
+    { id:'p-achievements', range:[0.760, 0.895] },
+    { id:'p-contact',      range:[0.905, 1.000] },
+  ].map(c => ({ ...c, el: document.getElementById(c.id) }));
+
+  const acts = [
+    { label:'00 · intro', range:[0.00, 0.09] },
+    { label:'01 · about', range:[0.09, 0.24] },
+    { label:'02 · education', range:[0.24, 0.40] },
+    { label:'03 · skills', range:[0.40, 0.58] },
+    { label:'04 · projects', range:[0.58, 0.76] },
+    { label:'05 · achievements', range:[0.76, 0.90] },
+    { label:'06 · contact', range:[0.90, 1.00] },
+  ];
+
+  function smoothstep(t){ t = clamp(t,0,1); return t*t*(3-2*t); }
+  function actOpacity(p, start, end, fadeFrac){
+    fadeFrac = fadeFrac || 0.35;
+    const range = end - start;
+    const fade = Math.max(range * fadeFrac, 0.008);
+    if(p < start - fade || p > end + fade) return 0;
+    if(p < start) return smoothstep((p - (start - fade)) / fade);
+    if(p > end) return 1 - smoothstep((p - end) / fade);
+    return 1;
+  }
+
+  const hudFill = document.getElementById('hudFill');
+  const hudFrame = document.getElementById('hudFrame');
+  const hudAct = document.getElementById('hudAct');
+  const hudCue = document.getElementById('hudCue');
+  const TOTAL_FRAMES = 1200;
+
+  function updatePanels(p){
+    hudFill.style.width = (p*100).toFixed(2) + '%';
+    hudFrame.textContent = String(Math.round(p * TOTAL_FRAMES)).padStart(4,'0');
+    hudCue.style.opacity = p > 0.03 ? '0' : '1';
+
+    let currentAct = acts[0].label;
+    for(const a of acts){ if(p >= a.range[0] - 0.02) currentAct = a.label; }
+    hudAct.textContent = currentAct;
+
+    for(const c of panelConfigs){
+      const o = actOpacity(p, c.range[0], c.range[1]);
+      c.el.style.opacity = o.toFixed(3);
+      c.el.style.pointerEvents = o > 0.6 ? 'auto' : 'none';
+      const dir = c.el.classList.contains('left') ? -1 : c.el.classList.contains('right') ? 1 : 0;
+      c.el.style.transform = c.el.classList.contains('center')
+        ? `translate(-50%, calc(-50% + ${(1-o)*16}px))`
+        : `translateY(calc(-50% + ${(1-o)*16}px)) translateX(${dir*(1-o)*24}px)`;
+    }
+  }
+
+  /* ============ three.js scene ============ */
+  const canvas = document.getElementById('scene');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 100);
+
+  function resizeRenderer(){
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+  }
+  resizeRenderer();
+  window.addEventListener('resize', resizeRenderer);
+
+  const copper = new THREE.Color(0xd68c45);
+  const cyan = new THREE.Color(0x5eead4);
+  const dim = new THREE.Color(0x2a2f38);
+
+  /* --- main chip --- */
+  const chip = new THREE.Group();
+  const bodyEdges = new THREE.EdgesGeometry(new THREE.BoxGeometry(2.6,2.6,0.3));
+  chip.add(new THREE.LineSegments(bodyEdges, new THREE.LineBasicMaterial({ color:copper, transparent:true, opacity:0.9 })));
+  const innerEdges = new THREE.EdgesGeometry(new THREE.BoxGeometry(1.7,1.7,0.32));
+  chip.add(new THREE.LineSegments(innerEdges, new THREE.LineBasicMaterial({ color:dim, transparent:true, opacity:0.8 })));
+
+  const pinGroups = [];
+  const pinMat = new THREE.LineBasicMaterial({ color:dim, transparent:true, opacity:0.75 });
+  const pinCount = 8;
+  for(let side=0; side<4; side++){
+    for(let i=0; i<pinCount; i++){
+      const t = (i/(pinCount-1) - 0.5) * 2.3;
+      let a,b,dir;
+      if(side===0){ a=[t,1.3,0]; b=[t,1.75,0]; dir=[0,1,0]; }
+      else if(side===1){ a=[t,-1.3,0]; b=[t,-1.75,0]; dir=[0,-1,0]; }
+      else if(side===2){ a=[1.3,t,0]; b=[1.75,t,0]; dir=[1,0,0]; }
+      else { a=[-1.3,t,0]; b=[-1.75,t,0]; dir=[-1,0,0]; }
+      const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a), new THREE.Vector3(...b)]);
+      const line = new THREE.Line(geo, pinMat);
+      const g = new THREE.Group();
+      g.add(line);
+      g.userData.dir = new THREE.Vector3(...dir);
+      chip.add(g);
+      pinGroups.push(g);
+    }
+  }
+  scene.add(chip);
+
+  /* --- ambient starfield --- */
+  const starCount = 240;
+  const starPos = new Float32Array(starCount*3);
+  const starCol = new Float32Array(starCount*3);
+  for(let i=0;i<starCount;i++){
+    const r = 6 + Math.random()*14;
+    const theta = Math.random()*Math.PI*2;
+    const phi = Math.acos(Math.random()*2-1);
+    starPos[i*3] = r*Math.sin(phi)*Math.cos(theta);
+    starPos[i*3+1] = r*Math.sin(phi)*Math.sin(theta)*0.6;
+    starPos[i*3+2] = r*Math.cos(phi)*0.5 - 3;
+    const c = Math.random()>0.5 ? cyan : copper;
+    starCol[i*3]=c.r; starCol[i*3+1]=c.g; starCol[i*3+2]=c.b;
+  }
+  const starGeo = new THREE.BufferGeometry();
+  starGeo.setAttribute('position', new THREE.BufferAttribute(starPos,3));
+  starGeo.setAttribute('color', new THREE.BufferAttribute(starCol,3));
+  const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ size:0.045, vertexColors:true, transparent:true, opacity:0.6 }));
+  scene.add(stars);
+
+  /* --- education timeline markers --- */
+  const eduGroup = new THREE.Group();
+  const eduPositions = [[3,0.3,-4], [0,1,-6], [-3,0,-8]];
+  const eduMats = [];
+  eduPositions.forEach((pos, i) => {
+    const g = new THREE.Group();
+    g.position.set(...pos);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.5,0.02,8,40), new THREE.MeshBasicMaterial({ color:i%2? cyan:copper, transparent:true, opacity:0.9 }));
+    const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.14,0), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0.9, wireframe:true }));
+    g.add(ring, core);
+    eduGroup.add(g);
+    eduMats.push(ring.material, core.material);
+  });
+  scene.add(eduGroup);
+
+  /* --- skill clusters --- */
+  const skillGroup = new THREE.Group();
+  const skillCenters = [[1.6,1.6,0],[-1.6,1.6,0],[-1.6,-1.6,0],[1.6,-1.6,0]];
+  const skillMats = [];
+  skillCenters.forEach((c, i) => {
+    const cluster = new THREE.Group();
+    cluster.position.set(...c);
+    for(let j=0;j<3;j++){
+      const s = 0.16 + Math.random()*0.12;
+      const box = new THREE.Mesh(
+        new THREE.BoxGeometry(s,s,s),
+        new THREE.MeshBasicMaterial({ color: j%2? copper:cyan, wireframe:true, transparent:true, opacity:0.85 })
+      );
+      box.position.set((Math.random()-0.5)*0.7, (Math.random()-0.5)*0.7, (Math.random()-0.5)*0.7);
+      cluster.add(box);
+      skillMats.push(box.material);
+    }
+    skillGroup.add(cluster);
+  });
+  scene.add(skillGroup);
+
+  /* --- project monoliths --- */
+  const projGroup = new THREE.Group();
+  const projMats = [];
+  [[4.2,0.3,0, copper],[-4.2,0.3,0, cyan]].forEach(([x,y,z,col]) => {
+    const edges = new THREE.EdgesGeometry(new THREE.BoxGeometry(0.5,2.6,0.5));
+    const mesh = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color:col, transparent:true, opacity:0.9 }));
+    mesh.position.set(x,y,z);
+    projGroup.add(mesh);
+    projMats.push(mesh.material);
+  });
+  scene.add(projGroup);
+
+  /* --- achievement badges --- */
+  const achGroup = new THREE.Group();
+  const achMats = [];
+  const achCount = 6;
+  for(let i=0;i<achCount;i++){
+    const a = (i/achCount)*Math.PI*2;
+    const r = 3.6;
+    const badge = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(0.18,0),
+      new THREE.MeshBasicMaterial({ color: i%2? copper:cyan, wireframe:true, transparent:true, opacity:0.9 })
+    );
+    badge.position.set(Math.cos(a)*r, Math.sin(a*1.3)*1.2, Math.sin(a)*r*0.6);
+    achGroup.add(badge);
+    achMats.push(badge.material);
+  }
+  scene.add(achGroup);
+
+  /* ============ camera keyframes ============ */
+  const kfs = [
+    { p:0.000, cam:[0,0,13],       look:[0,0,0],     rot:0.0, explode:0.00, scale:0.5 },
+    { p:0.050, cam:[0,0,7],        look:[0,0,0],     rot:0.4, explode:0.00, scale:0.9 },
+    { p:0.090, cam:[1.8,0.4,6],    look:[0,0,0],     rot:0.8, explode:0.00, scale:1.0 },
+    { p:0.160, cam:[-2.2,0.8,6],   look:[0,0,0],     rot:2.2, explode:0.00, scale:1.0 },
+    { p:0.230, cam:[0,0.2,6.5],    look:[0,0,0],     rot:3.4, explode:0.00, scale:1.0 },
+    { p:0.270, cam:[0,0,10],       look:[0,0,-2],    rot:3.6, explode:0.00, scale:0.9 },
+    { p:0.300, cam:[3,0.3,4],      look:[3,0.3,-4],  rot:3.6, explode:0.00, scale:0.9 },
+    { p:0.350, cam:[0,1,4],        look:[0,1,-6],    rot:3.6, explode:0.00, scale:0.9 },
+    { p:0.395, cam:[-3,0,4],       look:[-3,0,-8],   rot:3.6, explode:0.00, scale:0.9 },
+    { p:0.420, cam:[0,0,9],        look:[0,0,0],     rot:4.6, explode:0.15, scale:1.0 },
+    { p:0.450, cam:[3.2,2.6,6.5],  look:[1.4,1.4,0], rot:4.8, explode:0.65, scale:1.0 },
+    { p:0.495, cam:[-3.2,2.6,6.5], look:[-1.4,1.4,0],rot:5.0, explode:0.65, scale:1.0 },
+    { p:0.540, cam:[-3.2,-2.6,6.5],look:[-1.4,-1.4,0],rot:5.2,explode:0.65, scale:1.0 },
+    { p:0.580, cam:[3.2,-2.6,6.5], look:[1.4,-1.4,0],rot:5.4, explode:0.65, scale:1.0 },
+    { p:0.620, cam:[0,0,12],       look:[0,0,0],     rot:6.0, explode:0.00, scale:0.8 },
+    { p:0.665, cam:[4.2,0.3,3.2],  look:[4,0.3,0],   rot:6.0, explode:0.00, scale:0.8 },
+    { p:0.755, cam:[-4.2,0.3,3.2], look:[-4,0.3,0],  rot:6.0, explode:0.00, scale:0.8 },
+    { p:0.790, cam:[0,0,10],       look:[0,0,0],     rot:6.6, explode:0.25, scale:1.0 },
+    { p:0.900, cam:[0,2.2,9],      look:[0,0,0],     rot:7.2, explode:0.25, scale:1.0 },
+    { p:0.950, cam:[0,0,6.5],      look:[0,0,0],     rot:7.7, explode:0.00, scale:1.0 },
+    { p:1.000, cam:[0,0,5.2],      look:[0,0,0],     rot:8.0, explode:0.00, scale:1.05 },
+  ];
+
+  function lerp(a,b,t){ return a + (b-a)*t; }
+  function lerp3(a,b,t){ return [lerp(a[0],b[0],t), lerp(a[1],b[1],t), lerp(a[2],b[2],t)]; }
+
+  function evalKeyframes(p){
+    p = clamp(p,0,1);
+    let i = 0;
+    while(i < kfs.length-2 && p > kfs[i+1].p) i++;
+    const A = kfs[i], B = kfs[i+1];
+    const span = Math.max(B.p - A.p, 0.0001);
+    const t = smoothstep(clamp((p - A.p)/span, 0, 1));
+    return {
+      cam: lerp3(A.cam,B.cam,t),
+      look: lerp3(A.look,B.look,t),
+      rot: lerp(A.rot,B.rot,t),
+      explode: lerp(A.explode,B.explode,t),
+      scale: lerp(A.scale,B.scale,t),
+    };
+  }
+
+  let mouseX = 0, mouseY = 0;
+  window.addEventListener('mousemove', (e) => {
+    mouseX = (e.clientX/window.innerWidth - 0.5);
+    mouseY = (e.clientY/window.innerHeight - 0.5);
+  });
+
+  const tmpVec = new THREE.Vector3();
+
+  function renderFrame(p){
+    const s = evalKeyframes(p);
+    const parX = reducedMotion ? 0 : mouseX*0.25;
+    const parY = reducedMotion ? 0 : mouseY*0.2;
+
+    camera.position.set(s.cam[0]+parX, s.cam[1]-parY, s.cam[2]);
+    camera.lookAt(s.look[0], s.look[1], s.look[2]);
+
+    chip.rotation.y = s.rot;
+    chip.rotation.x = Math.sin(s.rot*0.6)*0.12;
+    chip.scale.setScalar(s.scale);
+    pinGroups.forEach(g => {
+      tmpVec.copy(g.userData.dir).multiplyScalar(s.explode*1.1);
+      g.position.copy(tmpVec);
+    });
+
+    stars.rotation.y = p*1.4;
+
+    const eduO = actOpacity(p, 0.230, 0.400, 0.15);
+    eduMats.forEach(m => m.opacity = eduO*0.9);
+    eduGroup.visible = eduO > 0.01;
+
+    const skillO = actOpacity(p, 0.400, 0.580, 0.15);
+    skillMats.forEach(m => m.opacity = skillO*0.85);
+    skillGroup.visible = skillO > 0.01;
+    skillGroup.rotation.y = s.rot*0.3;
+
+    const projO = actOpacity(p, 0.580, 0.760, 0.1);
+    projMats.forEach(m => m.opacity = projO*0.9);
+    projGroup.visible = projO > 0.01;
+
+    const achO = actOpacity(p, 0.760, 0.900, 0.15);
+    achMats.forEach(m => m.opacity = achO*0.9);
+    achGroup.visible = achO > 0.01;
+    achGroup.rotation.y = (p-0.76)*4;
+
+    renderer.render(scene, camera);
+  }
+
+  function loop(){
+    requestAnimationFrame(loop);
+    renderFrame(progress);
+    updatePanels(progress);
+  }
+  loop();
+  requestAnimationFrame(() => canvas.classList.add('ready'));
+
+})();
+</script>
+</body>
+</html>
